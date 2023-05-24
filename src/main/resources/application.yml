@@ -1,0 +1,35 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: company-service
+
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: companydb
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: mark
+    password: password
+    template:
+      routing-key: company_key
+      exchange: crm
+
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      default-zone:
+        - http://localhost:8761/eureka/
+logging:
+  level:
+    web: debug
+  file:
+    name: ./log/company-service
