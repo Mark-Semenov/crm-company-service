@@ -2,7 +2,6 @@ package ru.bwforum.mark.company.service.api.service.impl;
 
 import com.thoughtworks.xstream.converters.reflection.MissingFieldException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -20,16 +19,14 @@ import java.util.NoSuchElementException;
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
-    private final RabbitTemplate rabbitTemplate;
-
 
     @Override
     public Mono<CompanyDTO> getCompanyById(String companyId) {
         return companyRepository
                 .findById(companyId)
                 .map(CompanyMapper::mapToCompanyDto)
-                .log()
-                .onErrorComplete(NoSuchElementException.class);
+                .onErrorComplete(NoSuchElementException.class)
+                .log();
     }
 
     @Override
@@ -46,7 +43,6 @@ public class CompanyServiceImpl implements CompanyService {
         return companyRepository
                 .save(company)
                 .map(CompanyMapper::mapToCompanyDto)
-                .doOnNext(rabbitTemplate::convertAndSend)
                 .log();
     }
 
@@ -56,7 +52,6 @@ public class CompanyServiceImpl implements CompanyService {
                 .findById(companyId)
                 .map(CompanyMapper::mapToCompanyDto)
                 .doOnNext(item -> item.setDelete(true))
-                .doOnNext(rabbitTemplate::convertAndSend)
                 .map(CompanyDTO::getId)
                 .flatMap(companyRepository::deleteById)
                 .log();
@@ -64,14 +59,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public Flux<Void> removeAllCompanies() {
-        return companyRepository
-                .findAll()
-                .map(CompanyMapper::mapToCompanyDto)
-                .doOnNext(item -> item.setDelete(true))
-                .doOnNext(rabbitTemplate::convertAndSend)
-                .map(CompanyDTO::getId)
-                .flatMap(companyRepository::deleteById)
-                .log();
+        return companyRepository.deleteAll().flux().log();
     }
 
     @Override
